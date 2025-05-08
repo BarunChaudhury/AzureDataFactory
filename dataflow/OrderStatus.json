@@ -50,24 +50,17 @@
 			"sinks": [
 				{
 					"dataset": {
-						"referenceName": "DelimitedText1",
-						"type": "DatasetReference"
-					},
-					"name": "sink1"
-				},
-				{
-					"dataset": {
-						"referenceName": "productrank",
-						"type": "DatasetReference"
-					},
-					"name": "sink2"
-				},
-				{
-					"dataset": {
 						"referenceName": "FinalOrderData",
 						"type": "DatasetReference"
 					},
 					"name": "FinalOrderData"
+				},
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable2",
+						"type": "DatasetReference"
+					},
+					"name": "AggregatedData"
 				}
 			],
 			"transformations": [
@@ -246,20 +239,6 @@
 				"OrderFinal split(CustomerCategory == 'Young',",
 				"     CustomerCategory == 'Adult',",
 				"     disjoint: false) ~> DataSplit@(Young, Adult, Senior)",
-				"sort1 sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     umask: 0022,",
-				"     preCommands: [],",
-				"     postCommands: [],",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink1",
-				"window1 sink(allowSchemaDrift: true,",
-				"     validateSchema: false,",
-				"     umask: 0022,",
-				"     preCommands: [],",
-				"     postCommands: [],",
-				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> sink2",
 				"OrderFinal sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
@@ -275,7 +254,17 @@
 				"     preCommands: [],",
 				"     postCommands: [],",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> FinalOrderData"
+				"     skipDuplicateMapOutputs: true) ~> FinalOrderData",
+				"window1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> AggregatedData"
 			]
 		}
 	}
