@@ -1,0 +1,125 @@
+{
+	"name": "dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "orders",
+						"type": "DatasetReference"
+					},
+					"name": "orders"
+				},
+				{
+					"dataset": {
+						"referenceName": "products",
+						"type": "DatasetReference"
+					},
+					"name": "products"
+				},
+				{
+					"dataset": {
+						"referenceName": "customers1",
+						"type": "DatasetReference"
+					},
+					"name": "customers"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "dataflowOutputSQL",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AprilData"
+				},
+				{
+					"name": "castorders"
+				},
+				{
+					"name": "castproducts"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "derivedColumn1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as string,",
+				"          OrderDate as string,",
+				"          CustomerID as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          TotalAmount as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> orders",
+				"source(output(",
+				"          ProductID as string,",
+				"          ProductName as string,",
+				"          Category as string,",
+				"          Price as string,",
+				"          StockQuantity as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> products",
+				"source(output(",
+				"          CustomerID as string,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Email as string,",
+				"          Phone as string,",
+				"          City as string,",
+				"          Country as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> customers",
+				"castorders filter(month(OrderDate) == 4) ~> AprilData",
+				"orders cast(output(",
+				"          OrderDate as date 'yyyy-MM-dd',",
+				"          Quantity as integer,",
+				"          TotalAmount as double",
+				"     ),",
+				"     errors: true) ~> castorders",
+				"products cast(output(",
+				"          Price as double,",
+				"          StockQuantity as integer",
+				"     ),",
+				"     errors: true) ~> castproducts",
+				"castproducts select(mapColumn(",
+				"          ProductID,",
+				"          ProductName,",
+				"          Prod_Category = Category,",
+				"          Price,",
+				"          StockQuantity",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"customers derive(Phone_Validity = iif(length(Phone)==10, 'valid', 'not valid')) ~> derivedColumn1",
+				"AprilData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     recreate:true,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> sink1"
+			]
+		}
+	}
+}

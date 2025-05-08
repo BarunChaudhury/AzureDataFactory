@@ -1,0 +1,282 @@
+{
+	"name": "OrderStatus",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "orders2023",
+						"type": "DatasetReference"
+					},
+					"name": "orders2023"
+				},
+				{
+					"dataset": {
+						"referenceName": "orders2024",
+						"type": "DatasetReference"
+					},
+					"name": "orders2024"
+				},
+				{
+					"dataset": {
+						"referenceName": "orders2025",
+						"type": "DatasetReference"
+					},
+					"name": "orders2025"
+				},
+				{
+					"dataset": {
+						"referenceName": "salesexecutives",
+						"type": "DatasetReference"
+					},
+					"name": "salesexecutives"
+				},
+				{
+					"dataset": {
+						"referenceName": "customers2",
+						"type": "DatasetReference"
+					},
+					"name": "customers2"
+				},
+				{
+					"dataset": {
+						"referenceName": "products2",
+						"type": "DatasetReference"
+					},
+					"name": "products2"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "productrank",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				},
+				{
+					"dataset": {
+						"referenceName": "FinalOrderData",
+						"type": "DatasetReference"
+					},
+					"name": "FinalOrderData"
+				}
+			],
+			"transformations": [
+				{
+					"name": "orderdata"
+				},
+				{
+					"name": "typecasting"
+				},
+				{
+					"name": "customerTypecasting"
+				},
+				{
+					"name": "joinOrderProducts"
+				},
+				{
+					"name": "selectOrders"
+				},
+				{
+					"name": "joinOrdersCustTypecasting"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "OrderFinal"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "sort1"
+				},
+				{
+					"name": "window1"
+				},
+				{
+					"name": "aggregate2"
+				},
+				{
+					"name": "sort2"
+				},
+				{
+					"name": "DataSplit"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as string,",
+				"          OrderDate as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          UnitPrice as string,",
+				"          CustomerID as string,",
+				"          SalesExecID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> orders2023",
+				"source(output(",
+				"          OrderID as string,",
+				"          OrderDate as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          UnitPrice as string,",
+				"          CustomerID as string,",
+				"          SalesExecID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> orders2024",
+				"source(output(",
+				"          OrderID as string,",
+				"          OrderDate as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          UnitPrice as string,",
+				"          CustomerID as string,",
+				"          SalesExecID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> orders2025",
+				"source(output(",
+				"          SalesExecID as string,",
+				"          Name as string,",
+				"          Age as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> salesexecutives",
+				"source(output(",
+				"          CustomerID as string,",
+				"          CustomerName as string,",
+				"          Phone as string,",
+				"          City as string,",
+				"          Country as string,",
+				"          Age as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> customers2",
+				"source(output(",
+				"          ProductID as string,",
+				"          ProductName as string,",
+				"          {Product Category} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> products2",
+				"orders2023, orders2024, orders2025 union(byName: true)~> orderdata",
+				"orderdata cast(output(",
+				"          OrderDate as date,",
+				"          Quantity as integer,",
+				"          UnitPrice as double",
+				"     ),",
+				"     errors: true) ~> typecasting",
+				"customers2 cast(output(",
+				"          Age as integer",
+				"     ),",
+				"     errors: true) ~> customerTypecasting",
+				"typecasting, products2 join(orderdata@ProductID == products2@ProductID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinOrderProducts",
+				"joinOrderProducts select(mapColumn(",
+				"          OrderID,",
+				"          OrderDate,",
+				"          Quantity,",
+				"          UnitPrice,",
+				"          CustomerID,",
+				"          SalesExecID,",
+				"          ProductID = orderdata@ProductID,",
+				"          ProductName,",
+				"          {Product Category}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectOrders",
+				"selectOrders, customerTypecasting join(selectOrders@CustomerID == customers2@CustomerID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinOrdersCustTypecasting",
+				"joinOrdersCustTypecasting select(mapColumn(",
+				"          OrderID,",
+				"          OrderDate,",
+				"          Quantity,",
+				"          UnitPrice,",
+				"          SalesExecID,",
+				"          ProductID,",
+				"          ProductName,",
+				"          {Product Category},",
+				"          CustomerID = customers2@CustomerID,",
+				"          CustomerName,",
+				"          Phone,",
+				"          City,",
+				"          Country,",
+				"          Age",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 derive(CustomerCategory = case(    Age<=20, 'Young',    Age>20 && Age<=30, 'Adult', 'Senior'    )) ~> OrderFinal",
+				"OrderFinal aggregate(groupBy(ProductName),",
+				"     TotalOrders = sum(Quantity),",
+				"          OrderAmount = sum(Quantity*UnitPrice)) ~> aggregate1",
+				"aggregate1 sort(desc(TotalOrders, true)) ~> sort1",
+				"sort2 window(over({Product Category}),",
+				"     desc(TotalQTY, true),",
+				"     ProductRank = rank()) ~> window1",
+				"OrderFinal aggregate(groupBy({Product Category},",
+				"          ProductName),",
+				"     TotalQTY = sum(Quantity)) ~> aggregate2",
+				"aggregate2 sort(asc({Product Category}, true),",
+				"     desc(TotalQTY, true)) ~> sort2",
+				"OrderFinal split(CustomerCategory == 'Young',",
+				"     CustomerCategory == 'Adult',",
+				"     disjoint: false) ~> DataSplit@(Young, Adult, Senior)",
+				"sort1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1",
+				"window1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2",
+				"OrderFinal sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          OrderID as string,",
+				"          OrderDate as string,",
+				"          ProductID as string,",
+				"          Quantity as string,",
+				"          UnitPrice as string,",
+				"          CustomerID as string,",
+				"          SalesExecID as string",
+				"     ),",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> FinalOrderData"
+			]
+		}
+	}
+}

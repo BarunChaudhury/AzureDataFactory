@@ -1,0 +1,17 @@
+{
+	"name": "dataflowOutputSQL",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "Landing",
+			"table": "dataflow"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
